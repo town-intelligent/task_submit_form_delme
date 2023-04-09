@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://d3js.org/d3.v6.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" 
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" 
@@ -22,15 +21,42 @@
     <script src="static/js/set-page-info.js"></script>
     <script src="static/js/init.js"></script>
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@observablehq/inspector@3/dist/inspector.css">
+    <script src="static/js/plan.js"></script>
+    <script type="module" src="static/js/render.js"></script>
+    <script type="module" src="static/js/app.js"></script>
+    
     <script type="module">
-      import { draws } from './static/js/app.js'
+      import { draws, addWeight } from './static/js/app.js'
 
       // Get user tasks
       var str_list_task_UUIDs = getLocalStorage("list_tasks");
-      var weight_project = getProjectWeight(str_list_task_UUIDs);
-      draws(weight_project);
+      var list_task_UUIDs = [];
+      if (str_list_task_UUIDs === "") {
+        // Get user task UUIDs
+        list_task_UUIDs = list_tasks(getLocalStorage("username"));
+      } else {
+        list_task_UUIDs = str_list_task_UUIDs.split(",");
+      }
 
+      if (list_task_UUIDs.length != 0) {
+        var totalProjectWeight = {};
+
+        for (var index = 0; index < list_task_UUIDs.length; index++) {
+          var weight = getProjectWeight(list_task_UUIDs[index]);
+          totalProjectWeight = addWeight(totalProjectWeight, weight)
+        }
+
+        draws(totalProjectWeight);
+      }
     </script>
+
+    <script>
+      // Init, add by yillkid
+      navbar();
+    </script>
+
   </head>
 
   <body onload="init();">
@@ -213,7 +239,7 @@
               <!-- <div class="col-6"> -->
                 <div class="col-xxl-7 col-xl-7 col-lg-7 col-md-7 col-sm-12 col-12">
                 <div class="text-start w-100">
-                  <div id="weight_chart"></div>
+                  <div id="observablehq-chart-b9eea16e1"></div>
                 </div>
               </div>
             </div>
