@@ -1,1 +1,1 @@
-git add . ; git commit --amend -m "feat: weight chart" ; git push -f
+git add . ; git commit --amend -m "fix: revise style for weight chart" ; git push -f
