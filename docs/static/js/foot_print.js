@@ -1,3 +1,33 @@
+async function submitTaskTickets(task_UUID) {
+  return new Promise(async (resolve, reject) => {
+    if (getLocalStorage(task_UUID)=== "") {
+      return;
+    }
+
+    obj = JSON.parse(getLocalStorage(task_UUID));
+    var dataJSON = {"uuid": task_UUID,"sdgs-1":obj.ticket.s1,"sdgs-2":obj.ticket.s2,
+      "sdgs-3":obj.ticket.s3,"sdgs-4":obj.ticket.s4,"sdgs-5":obj.ticket.s5,
+      "sdgs-6":obj.ticket.s6,"sdgs-7":obj.ticket.s7,"sdgs-8":obj.ticket.s8,
+      "sdgs-9":obj.ticket.s9,"sdgs-10":obj.ticket.s10,"sdgs-11":obj.ticket.s11,
+      "sdgs-12":obj.ticket.s12,"sdgs-13":obj.ticket.s13,"sdgs-14":obj.ticket.s14,
+      "sdgs-15":obj.ticket.s15,"sdgs-16":obj.ticket.s16,"sdgs-17":obj.ticket.s17,
+      "sdgs-18":obj.ticket.s18,"sdgs-19":obj.ticket.s19,"sdgs-20":obj.ticket.s20,
+      "sdgs-21":obj.ticket.s21,"sdgs-22":obj.ticket.s22,"sdgs-23":obj.ticket.s23,
+      "sdgs-24":obj.ticket.s24,"sdgs-25":obj.ticket.s25,"sdgs-26":obj.ticket.s26,
+      "sdgs-27":obj.ticket.s27};
+
+    var taskWeight = {};
+    try {
+      taskWeight = tasks_submit(dataJSON);
+      // Set project weight to LocalStorage
+      setLocalStorage("project_weight", taskWeight);
+    } catch(e) {console.log(e);}
+
+    resolve(taskWeight);
+  });
+}
+
+
 function addWeight(w1, w2) {
 
   const combined = [w1, w2].reduce((a, obj) => {
@@ -10,103 +40,29 @@ function addWeight(w1, w2) {
   return combined;
 }
 
-function getProjectWeight(uuid_task) {
+function submitTaskComment() {
+  return new Promise(async (resolve, reject) => {
+    // Get task UUID
+    var queryString = window.location.search;
+    var urlParams = new URLSearchParams(queryString);
+    var uuid = urlParams.get("uuid");
 
-  var projectWeight = {};
-  var dataJSON = {};
-  dataJSON.uuid = uuid_task;
+    var dataJSON = {};
+    dataJSON.uuid = uuid;
+    dataJSON.email = document.getElementById("email").value;
+    dataJSON.comment = document.getElementById("Idcomment").value;
 
-  $.ajax({
-    url: HOST_URL_TPLANET_DAEMON + "/projects/weight",
-    type: "POST",
-    async: false,
-    crossDomain: true,
-    data: dataJSON,
-    success: function(returnData) {
-       const obj = JSON.parse(returnData);
-       // Set project weight to LocalStorage
-       setLocalStorage("project_weight", returnData);
-       projectWeight = obj;
-    },
-    error: function(xhr, ajaxOptions, thrownError){
-      console.log(thrownError);
-    }
+    var img = document.getElementById("id_upload_foot_print_img").style.backgroundImage;
+    img = img.replace('url("', '');
+    img = img.replace('")', '');
+
+    dataJSON.img = img;//getLocalStorage("commentImg"); // img; // getLocalStorage("commentImg");
+
+    var resultBool = false;
+    resultBool = comment_project(dataJSON);
+
+    resolve(resultBool);
   });
-
-  return projectWeight;
-}
-
-function submitTaskComment(task_UUID) {
-  // Get task UUID
-  var queryString = window.location.search;
-  var urlParams = new URLSearchParams(queryString);
-  var uuid = urlParams.get("uuid");
-
-  var dataJSON = {};
-  dataJSON.uuid = uuid;
-  dataJSON.email = document.getElementById("email").value;
-  dataJSON.comment = document.getElementById("Idcomment").value;
-  
-  var img = document.getElementById("id_upload_foot_print_img").style.backgroundImage;
-  img = img.replace('url("', '');
-  img = img.replace('")', '');
-
-  dataJSON.img = getLocalStorage("commentImg"); // img; // getLocalStorage("commentImg");
-  
-  $.ajax({
-    url: HOST_URL_TPLANET_DAEMON + "/projects/comment",
-    type: "POST",
-    async: false,
-    crossDomain: true,
-    data: dataJSON,
-    success: function(returnData) {
-      console.log(returnData)
-    },
-    error: function(xhr, ajaxOptions, thrownError){
-      console.log(thrownError);
-    }
-  });
-
-  return;
-}
-
-function submitTaskTickets(task_UUID) {
-  if (getLocalStorage(task_UUID)=== "") {
-    return;
-  }
-
-  obj = JSON.parse(getLocalStorage(task_UUID));
-  var dataJSON = {"uuid": task_UUID,"sdgs-1":obj.ticket.s1,"sdgs-2":obj.ticket.s2,
-          "sdgs-3":obj.ticket.s3,"sdgs-4":obj.ticket.s4,"sdgs-5":obj.ticket.s5,
-          "sdgs-6":obj.ticket.s6,"sdgs-7":obj.ticket.s7,"sdgs-8":obj.ticket.s8,
-          "sdgs-9":obj.ticket.s9,"sdgs-10":obj.ticket.s10,"sdgs-11":obj.ticket.s11,
-          "sdgs-12":obj.ticket.s12,"sdgs-13":obj.ticket.s13,"sdgs-14":obj.ticket.s14,
-          "sdgs-15":obj.ticket.s15,"sdgs-16":obj.ticket.s16,"sdgs-17":obj.ticket.s17,
-          "sdgs-18":obj.ticket.s18,"sdgs-19":obj.ticket.s19,"sdgs-20":obj.ticket.s20,
-          "sdgs-21":obj.ticket.s21,"sdgs-22":obj.ticket.s22,"sdgs-23":obj.ticket.s23,
-          "sdgs-24":obj.ticket.s24,"sdgs-25":obj.ticket.s25,"sdgs-26":obj.ticket.s26,
-          "sdgs-27":obj.ticket.s27};
-
-  var taskWeight = {};
-
-  $.ajax({
-    url: HOST_URL_TPLANET_DAEMON + "/tasks/submit",
-    type: "POST",
-    async: false,
-    crossDomain: true,
-    data: dataJSON,
-    success: function(returnData) {
-       const obj = JSON.parse(returnData);
-       // Set project weight to LocalStorage
-       setLocalStorage("project_weight", returnData);
-       taskWeight = obj;
-    },
-    error: function(xhr, ajaxOptions, thrownError){
-      console.log(thrownError);
-    }
-  });
-
-  return taskWeight;
 }
 
 function updateNodeData(baseNodes, baseLinks) {
@@ -114,10 +70,16 @@ function updateNodeData(baseNodes, baseLinks) {
   var str_list_task_UUIDs = getLocalStorage("list_tasks");
   var list_task_UUIDs  = [];
   if (str_list_task_UUIDs === "") {
-    // Get user task UUIDs
-    list_task_UUIDs = list_tasks(getLocalStorage("username"));
+    var resultJSON = {};
+    resultJSON = get_user_uuid_tasks(getLocalStorage("email"));
+
+    try {
+      list_task_UUIDs = resultJSON.uuid;
+    } catch(e) { console.log(e); }
   } else {
-    list_task_UUIDs = str_list_task_UUIDs.split(",");
+    try {
+      list_task_UUIDs = str_list_task_UUIDs.split(",");
+    } catch(e) { console.log(e); }
   }
 
   // Submit all tasks
@@ -160,8 +122,24 @@ function updateNodeData(baseNodes, baseLinks) {
 
   // Get project weight
   var projectWeight = {};
+  var list_uuid_project = [];
 
   for (var index = 0; index < list_task_UUIDs.length; index++) {
+    // Check duplicate project
+    var obj_task = get_task_description(list_task_UUIDs[index]);
+    var uuid_project = null;
+    try {
+      uuid_project = obj_task.thumbnail.split("/")[3];
+    } catch(e) {
+      console.log(e);
+    }
+
+    if (uuid_project != null && list_uuid_project.includes(uuid_project)) {
+      continue;
+    } else {
+      list_uuid_project.push(uuid_project);
+    }
+
     var weight = getProjectWeight(list_task_UUIDs[index]);
     projectWeight = addWeight(projectWeight, weight);
   }
@@ -192,7 +170,7 @@ function updateNodeData(baseNodes, baseLinks) {
   }
 
   // Updating links
-  // { target: "SDG-1", source: "C" , strength: 0.5 }, 
+  // { target: "SDG-1", source: "C" , strength: 0.5 },
   for (var index = 0; index < new_personal_node.length; index++) {
     obj = new_personal_node[index];
 
@@ -221,29 +199,52 @@ function updateTalbeData() {
   var str_list_task_UUIDs = getLocalStorage("list_tasks");
   var list_task_UUIDs = [];
   if (str_list_task_UUIDs === "") {
-    // Get user task UUIDs
-    list_task_UUIDs = list_tasks(getLocalStorage("username"));
+    var resultJSON = {};
+    resultJSON = get_user_uuid_tasks(getLocalStorage("email"));
+
+    try {
+      list_task_UUIDs = resultJSON.uuid;
+    } catch(e) { console.log(e); }
+
   } else {
-    list_task_UUIDs = str_list_task_UUIDs.split(",");
+    try {
+      list_task_UUIDs = str_list_task_UUIDs.split(",");
+    } catch (e) { console.log(e); return; };
   }
 
   var list_child_tasks = [];
-  
-  for (var index = 0; index < list_task_UUIDs.length; index ++) { 
+
+  for (var index = 0; index < list_task_UUIDs.length; index ++) {
     list_child_tasks.push(get_child_tasks(list_task_UUIDs[index]));
   }
 
   // Project weight
   var projectWeight = {};
+  var list_uuid_project = [];
 
   for (var index = 0; index < list_task_UUIDs.length; index++) {
+    // Check duplicate project
+    var obj_task = get_task_description(list_task_UUIDs[index]);
+    var uuid_project = null;
+    try {
+      uuid_project = obj_task.thumbnail.split("/")[3];
+    } catch(e) {
+      console.log(e);
+    }
+
+    if (uuid_project != null && list_uuid_project.includes(uuid_project)) {
+      continue;
+    } else {
+      list_uuid_project.push(uuid_project);
+    }
+
     var weight = getProjectWeight(list_task_UUIDs[index]);
     projectWeight = addWeight(projectWeight, weight);
   }
 
   try {
     for (var index = 1; index <= 27; index ++) {
-      document.getElementById("project_s" + index).innerHTML = projectWeight["sdgs-" + index];  
+      document.getElementById("project_s" + index).innerHTML = projectWeight["sdgs-" + index];
     }
   } catch(e) {
     console.log(e);
@@ -251,9 +252,22 @@ function updateTalbeData() {
 
   // Personal
   try {
+    // Check if user join the task in task page
     var uuid_target = getLocalStorage("target");
+    if (uuid_target == "") {
+      return;
+    }
+
     var str_obj_task = getLocalStorage(uuid_target);
-    var obj_target = JSON.parse(str_obj_task);
+
+    var obj_target = {}
+    try {
+      obj_target = JSON.parse(str_obj_task);
+    } catch (e) {
+      console.log(e);
+      return;
+    }
+
     var obj_ticket = obj_target.ticket;
 
     for(var index = 1; index <= 27; index++) {

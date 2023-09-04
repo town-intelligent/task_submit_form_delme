@@ -1,3 +1,14 @@
+function task_save_to_eID(obj_task) {
+  // Save
+  var resultJSON = {};
+  try {
+    resultJSON = task_save(obj_task);
+  } catch (e) {
+    console.log(e);
+    alert("您掃描的 QR Code 可能有問題！請洽系統管理員！ (003)");
+  }
+}
+
 function setInfoEid() {
   // Set username
   $("#userid").text(getLocalStorage("username"));
@@ -16,21 +27,30 @@ function setPageInfo() {
   var page = path.split("/").pop();
 
   if (page == "eid.html") {
+    var uuid_save_task = getLocalStorage("save_task");
+    if (uuid_save_task != "") {
+      var obj_task = save_task_by_uuid(uuid_save_task);
+      task_save_to_eID(obj_task);
+      setLocalStorage("save_task", null);
+    }
+
+    // eID page
     setInfoEid();
   } else if (page.includes("issues")) {
     $("#nav-issues").addClass("active");
-    
+
     // List issues
     if (page === "issues.html") {
       list_issues(getLocalStorage("email"));
-    } 
-    
+    }
+
   } else if (page == "foot_print.html") {
     $("#nav-foot_print").addClass("active");
 
     // Get user tasks
     var str_list_task_UUIDs = getLocalStorage("list_tasks");
     var list_task_UUIDs  = [];
+
     if (str_list_task_UUIDs === "") {
       // Get user task UUIDs
       list_task_UUIDs = list_tasks(getLocalStorage("username"));
@@ -39,14 +59,18 @@ function setPageInfo() {
     }
 
     // Submit all tasks
-    for (var index = 0; index < list_task_UUIDs.length; index ++) {
-      submitTaskTickets(list_task_UUIDs[index]);
-    }
+    try {
+      for (var index = 0; index < list_task_UUIDs.length; index ++) {
+        submitTaskTickets(list_task_UUIDs[index]);
+      }
+    } catch (e) {console.log(e);};
 
     // Update Table data
-    if (list_task_UUIDs.length != 0) {
-      updateTalbeData();
-    }
+    try {
+      if (list_task_UUIDs.length != 0) {
+        updateTalbeData();
+      }
+    } catch (e) {console.log(e);};
 
   } else if (page == "wallet.html") {
     $("#nav-wallet").addClass("active");
@@ -61,37 +85,21 @@ function setPageInfo() {
     var obj_img_avatar = document.getElementById("btn_avatar_img").firstChild;
     obj_img_avatar.style.backgroundImage = "url(" + HOST_URL_EID_DAEMON + pathAvatarImg  +  ")";
   } else if (page == "signup.html" || page == "signin.html") {
-      var token = getLocalStorage("jwt");
 
-      if (token == "") {
-        return;
+      // Check if pass any task UUID and save to localStorage
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      var task = urlParams.get("task");
+      if (task != null) {
+        setLocalStorage("save_task", task);
+      } else { console.log("no any task should be save to local storage."); }
+
+      // Detect account login status
+      var resultBool = false;
+      resultBool = verifyToken(getLocalStorage("jwt"));
+      if (resultBool == true) {
+        window.location.replace("/eid.html");
       }
-
-      var dataJSON = {};
-      dataJSON.token =  token;
-
-      $.ajax({
-        url: HOST_URL_EID_DAEMON + "/accounts/verify_jwt",
-        type: "POST",
-        async: false,
-        crossDomain: true,
-        data:  dataJSON,
-        success: function(returnData) {
-          const obj = JSON.parse(returnData);
-          if (obj.result) {
-            console.log("JWT still avliable");
-            // Redirect to eID page
-            window.location.replace("/eid.html");
-          } else {
-            // OK for signup, just return
-            console.log("JWT still NOT avliable");
-            return;
-          }
-        },
-        error: function(xhr, ajaxOptions, thrownError){
-          console.log(thrownError);
-        }
-      });
     } else if (page == "activity_convey_ideas.html") {
       // Params
       const queryString = window.location.search;
@@ -113,7 +121,7 @@ function setPageInfo() {
         var obj_td_name = document.createElement("td");
         obj_td_name.className = "align-middle";
         obj_td_name.style="font-size: 12px; min-width:200px"
-        
+
         if (parseInt(obj_task.type_task) == 0) {
           obj_td_name.innerHTML = obj_parent_task.name;
         } else {
@@ -132,20 +140,20 @@ function setPageInfo() {
           if (content["sdgs-" + index.toString()] != "1") {
             continue;
           }
-  
+
           var a = document.createElement("a");
           a.className = "d-block";
-  
+
           var img = document.createElement("img");
           img.className = "mr-2 mb-2";
-  
+
           let path = "";
           if (index < 10) {
-            path = "static/imgs/SDGS/E_WEB_0";
+            path = "/static/imgs/SDGS/E_WEB_0";
           } else {
-            path = "static/imgs/SDGS/E_WEB_";
+            path = "/static/imgs/SDGS/E_WEB_";
           }
-  
+
           img.src = path + index.toString() + ".png";
           img.setAttribute("width", "30px");
           img.setAttribute("height", "30px");
@@ -171,12 +179,12 @@ function setPageInfo() {
         obj_div_submit.style="min-width:150px";
 
         obj_div_submit.setAttribute("onclick", "location.href='/tasks/activity_participation.html?uuid=" + obj_task.uuid + "&gps=" + gps + "'");
-        
+
         obj_div_submit.innerHTML = "參與任務";
 
         // Append
         obj_td_submit.append(obj_div_submit);
-        
+
         obj_tr.append(obj_td_name);
         obj_tr.append(obj_td_sdg);
         obj_tr.append(obj_td_period);
@@ -190,7 +198,7 @@ function setPageInfo() {
       var urlParams = new URLSearchParams(queryString);
       var uuid = urlParams.get("uuid");
       var gps = urlParams.get("gps");
-      
+
       // Set Task
       setLocalStorage("target", uuid);
 
@@ -202,10 +210,8 @@ function setPageInfo() {
         uuid_target_parent = get_parent_task(obj_target.uuid);
         obj_target_parent = get_task_description(uuid_target_parent);
       }
-      
-      //var obj_target = JSON.parse(getLocalStorage(uuid));
-      var task_period = [];
 
+      var task_period = [];
       try {
         if (parseInt(obj_target.type_task) == 0) {
           task_period = obj_target_parent.period.split("-");
@@ -222,7 +228,7 @@ function setPageInfo() {
 
       if (parseInt(obj_target.type_task) == 0) {
         document.getElementById("task_name").value = obj_target_parent.name;
-      } else {  
+      } else {
         document.getElementById("task_name").value = obj_target.name;
       }
 
@@ -241,13 +247,13 @@ function setPageInfo() {
         a.className = "d-block";
 
         var img = document.createElement("img");
-        img.className = "mr-2";
+        img.className = "mr-2 mb-2";
 
         let path = "";
         if (index < 10) {
-          path = "static/imgs/SDGS/E_WEB_0";
+          path = "/static/imgs/SDGS/E_WEB_0";
         } else {
-          path = "static/imgs/SDGS/E_WEB_";
+          path = "/static/imgs/SDGS/E_WEB_";
         }
 
         img.src = path + index.toString() + ".png";
@@ -273,32 +279,7 @@ function setPageInfo() {
           return {"result" :false, "content": "Geolocation is not supported by this browser."};
         }
       }
-    } 
-}
-
-function geps_set(lat, lon, uuid_task) {
-  var dataJSON = {};
-  dataJSON.lat = lat;
-  dataJSON.lon = lon;
-  dataJSON.uuid_task = uuid_task;
-  dataJSON.email = getLocalStorage("email");
-
-  var resultJSON = {};
-
-  $.ajax({
-    url: HOST_URL_TPLANET_DAEMON + "/projects/gps_set",
-    type: "POST",
-    async: false,
-    crossDomain: true,
-    data:  dataJSON,
-    success: function(returnData) {
-       resultJSON = JSON.parse(returnData);
-    },
-    error: function(xhr, ajaxOptions, thrownError){
-      console.log(thrownError);
     }
-  });
-  return resultJSON;
 }
 
 function pushPosition(position) {
@@ -306,6 +287,6 @@ function pushPosition(position) {
   var queryString = window.location.search;
   var urlParams = new URLSearchParams(queryString);
   var uuid = urlParams.get("uuid");
-  
-  geps_set(position.coords.latitude, position.coords.longitude,  uuid);
+
+  gps_set(position.coords.latitude, position.coords.longitude,  uuid);
 }
