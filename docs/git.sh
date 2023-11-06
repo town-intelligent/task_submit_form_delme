@@ -1,1 +1,1 @@
-git add . ; git commit --amend -m "feat: initial commit" ; git push -f
+git add . ; git commit --amend -m "fix: prevent submit child task" ; git push -f

@@ -73,18 +73,13 @@ function updateNodeData(baseNodes, baseLinks) {
     var resultJSON = {};
     resultJSON = get_user_uuid_tasks(getLocalStorage("email"));
 
-    try {
+  try {
       list_task_UUIDs = resultJSON.uuid;
     } catch(e) { console.log(e); }
   } else {
     try {
       list_task_UUIDs = str_list_task_UUIDs.split(",");
     } catch(e) { console.log(e); }
-  }
-
-  // Submit all tasks
-  for (var index = 0; index < list_task_UUIDs.length; index ++) {
-    submitTaskTickets(list_task_UUIDs[index]);
   }
 
   // Update Table data

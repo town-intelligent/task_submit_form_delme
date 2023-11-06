@@ -58,13 +58,6 @@ function setPageInfo() {
       list_task_UUIDs = str_list_task_UUIDs.split(",");
     }
 
-    // Submit all tasks
-    try {
-      for (var index = 0; index < list_task_UUIDs.length; index ++) {
-        submitTaskTickets(list_task_UUIDs[index]);
-      }
-    } catch (e) {console.log(e);};
-
     // Update Table data
     try {
       if (list_task_UUIDs.length != 0) {
